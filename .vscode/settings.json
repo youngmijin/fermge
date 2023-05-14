@@ -1,0 +1,42 @@
+{
+  "black-formatter.args": [
+    "--config",
+    "pyproject.toml"
+  ],
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": true
+  },
+  "editor.indentSize": "tabSize",
+  "editor.insertSpaces": true,
+  "editor.formatOnSave": true,
+  "editor.renderControlCharacters": true,
+  "editor.trimAutoWhitespace": true,
+  "files.encoding": "utf8",
+  "files.eol": "\n",
+  "files.exclude": {
+    "**/.git": true,
+    "**/.venv": true
+  },
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true,
+  "python.analysis.diagnosticMode": "openFilesOnly",
+  "python.defaultInterpreterPath": "./.venv/bin/python",
+  "python.formatting.provider": "none",
+  "python.languageServer": "Pylance",
+  "python.linting.enabled": false,
+  "[properties]": {
+    "editor.trimAutoWhitespace": false,
+    "files.trimTrailingWhitespace": false
+  },
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.rulers": [
+      100
+    ],
+    "editor.tabSize": 4
+  },
+  "[cpp]": {
+    "editor.tabSize": 2,
+  }
+}

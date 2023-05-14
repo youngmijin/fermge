@@ -1,0 +1,31 @@
+### Python ###
+__pycache__/
+*.py[cod]
+*$py.class
+.mypy_cache/
+*.so
+
+### Visual Studio Code ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+### Jupyter Notebooks ###
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+*.ipynb
+
+### Data ###
+data/*
+!data/*.py
+
+### Output ###
+output/
+
+### Misc ###
+*.rb
+*.sh
+*.pdf
+*.pkl
+*.yaml
+*.zip
