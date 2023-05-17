@@ -1,11 +1,25 @@
+import importlib
+import inspect
+import types
 from itertools import product
+from typing import Callable, TypeVar
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 from rich import print
 
-GroupCriteria = tuple[str, dict[str, list[int]]]
+from data.dataset import Dataset
+
+__all__ = [
+    "make_group_indices",
+    "encode_onehot_columns",
+    "one_way_normalizer",
+    "get_dataset_class",
+]
+
+#: A tuple of (group criteria name, (group name, values associated with group or function to determine group)
+GroupCriteria = tuple[str, dict[str, list[int] | Callable[[pd.Series], pd.Series]]]
 
 
 def make_group_indices(
@@ -14,21 +28,24 @@ def make_group_indices(
     group_names: list[list[str]] = []
     for _, group_mapping_dict in criterias:
         group_names.append(list(group_mapping_dict.keys()))
-    group_name_combinations: list[list[str]] = [
-        list(x) for x in product(*group_names)
-    ]
+    group_name_combinations: list[list[str]] = [list(x) for x in product(*group_names)]
 
     group_indices: dict[str, tuple[NDArray[np.intp], NDArray[np.intp]]] = {}
     for gnc in group_name_combinations:
-        group_divisors_train: list = []
-        group_divisors_valid: list = []
+        group_divisors_train: list[pd.Series[bool]] = []
+        group_divisors_valid: list[pd.Series[bool]] = []
         for group_name, (group_key, group_mapping_dict) in zip(gnc, criterias):
-            group_divisors_train.append(
-                X_train[group_key].isin(group_mapping_dict[group_name])
-            )
-            group_divisors_valid.append(
-                X_valid[group_key].isin(group_mapping_dict[group_name])
-            )
+            group_name_criteria = group_mapping_dict[group_name]
+            if isinstance(group_name_criteria, list):
+                group_divisors_train.append(X_train[group_key].isin(group_name_criteria))
+                group_divisors_valid.append(X_valid[group_key].isin(group_name_criteria))
+            else:
+                train_criteria = group_name_criteria(X_train[group_key])
+                assert train_criteria.dtype == bool
+                valid_criteria = group_name_criteria(X_valid[group_key])
+                assert valid_criteria.dtype == bool
+                group_divisors_train.append(train_criteria)
+                group_divisors_valid.append(valid_criteria)
         group_divisor_train = np.all(group_divisors_train, axis=0)
         group_divisor_valid = np.all(group_divisors_valid, axis=0)
 
@@ -54,3 +71,37 @@ def encode_onehot_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
             df.loc[df[column] == new_colname, new_colname] = 1
         df = df.drop(columns=column)
     return df
+
+
+T = TypeVar("T", bound=np.generic)
+
+
+def one_way_normalizer(X_train: NDArray[T], X_valid: NDArray[T]) -> tuple[NDArray[T], NDArray[T]]:
+    assert X_train.ndim == 2, "X_train must be 2D"
+    assert X_valid.ndim == 2, "X_valid must be 2D"
+    assert X_train.shape[1] == X_valid.shape[1], "X_train and X_valid must have same shape"
+    X_train_float = X_train.astype(float)
+    X_valid_float = X_valid.astype(float)
+    X_train_mean = np.mean(X_train_float, axis=0).astype(float)
+    X_train_std = np.std(X_train_float, axis=0).astype(float)
+    X_train_norm = ((X_train_float - X_train_mean) / X_train_std).astype(X_train.dtype)
+    X_valid_norm = ((X_valid_float - X_train_mean) / X_train_std).astype(X_valid.dtype)
+    return X_train_norm, X_valid_norm
+
+
+def get_dataset_class(dataset: str) -> type[Dataset]:
+    data_class = None
+    for v in importlib.import_module(f"data.{dataset}").__dict__.values():
+        if (
+            inspect.isclass(v)
+            and (not inspect.isabstract(v))
+            and (type(v) != types.GenericAlias)  # pyright: ignore[reportUnnecessaryComparison]
+            and (v is not Dataset)
+            and issubclass(v, Dataset)
+        ):
+            data_class = v
+            break
+    if data_class is None:
+        raise ValueError(f"invalid dataset: {dataset}")
+
+    return data_class

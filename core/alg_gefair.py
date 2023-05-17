@@ -106,16 +106,10 @@ class GEFairSolver:
         self.lib.free_gefair_result.argtypes = [ctypes.c_void_p]
         self.lib.free_gefair_result.restype = None
 
-        self.flag_trace_hypi_t = ctypes.c_bool.in_dll(
-            self.lib, "FLAG_TRACE_HYPI_T"
-        ).value
+        self.flag_trace_hypi_t = ctypes.c_bool.in_dll(self.lib, "FLAG_TRACE_HYPI_T").value
 
-        self.size_of_double = ctypes.c_size_t.in_dll(
-            self.lib, "SIZE_OF_DOUBLE"
-        ).value
-        self.size_of_size_t = ctypes.c_size_t.in_dll(
-            self.lib, "SIZE_OF_SIZE_T"
-        ).value
+        self.size_of_double = ctypes.c_size_t.in_dll(self.lib, "SIZE_OF_DOUBLE").value
+        self.size_of_size_t = ctypes.c_size_t.in_dll(self.lib, "SIZE_OF_SIZE_T").value
 
     def solve_gefair(
         self,

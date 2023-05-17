@@ -2,9 +2,11 @@ import hashlib
 import os
 from abc import ABC, abstractmethod
 
+import gdown
 import numpy as np
-import requests
 from numpy.typing import NDArray
+
+__all__ = ["Dataset"]
 
 
 class Dataset(ABC):
@@ -39,10 +41,7 @@ class Dataset(ABC):
             return
         if remote_url is None:
             remote_url = self.file_remote_url
-        response = requests.get(remote_url)
-        assert response.status_code == 200, "failed to download the dataset"
-        with open(self.file_local_path, "wb") as f:
-            f.write(response.content)
+        gdown.download(remote_url, self.file_local_path, quiet=True, fuzzy=True)
         if not self.check():
             raise RuntimeError("downloaded file is corrupted")
 

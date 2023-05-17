@@ -7,7 +7,7 @@ __all__ = ["BinaryLogisticClassification"]
 
 
 class BinaryLogisticClassification:
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs):  # pyright: ignore[reportMissingParameterType]
         self.classifier = LogisticRegression(**kwargs)
 
         self.train_proba: NDArray[np.float_] | None = None
@@ -72,12 +72,8 @@ class BinaryLogisticClassification:
         ), "classifier is not fitted yet"
 
         if group is not None:
-            assert (
-                self.train_group_indices is not None
-            ), "train groups are not set yet"
-            assert (
-                group in self.train_group_indices
-            ), f"train group {group} is not found"
+            assert self.train_group_indices is not None, "train groups are not set yet"
+            assert group in self.train_group_indices, f"train group {group} is not found"
             indices = self.train_group_indices[group]
             y_hat = (self.train_proba[indices, 1] >= threshold).astype(int)
             return y_hat, confusion_matrix(self.train_y[indices], y_hat).ravel()
@@ -95,12 +91,8 @@ class BinaryLogisticClassification:
         ), "classifier is not validated yet"
 
         if group is not None:
-            assert (
-                self.valid_group_indices is not None
-            ), "valid groups are not set yet"
-            assert (
-                group in self.valid_group_indices
-            ), f"valid group {group} is not found"
+            assert self.valid_group_indices is not None, "valid groups are not set yet"
+            assert group in self.valid_group_indices, f"valid group {group} is not found"
             indices = self.valid_group_indices[group]
             y_hat = (self.valid_proba[indices, 1] >= threshold).astype(int)
             return y_hat, confusion_matrix(self.valid_y[indices], y_hat).ravel()

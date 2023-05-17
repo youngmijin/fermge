@@ -36,6 +36,5 @@ class ParamSet:
 
 def get_param_sets(param_dict: dict[str, list[float]]) -> list[ParamSet]:
     return [
-        ParamSet.from_dict(dict(zip(param_dict.keys(), v)))
-        for v in product(*param_dict.values())
+        ParamSet.from_dict(dict(zip(param_dict.keys(), v))) for v in product(*param_dict.values())
     ]

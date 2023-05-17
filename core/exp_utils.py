@@ -36,10 +36,10 @@ class Cache(Generic[T, V]):
 
 
 class FakePool:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):  # pyright: ignore[reportMissingParameterType]
         pass
 
-    def starmap(self, fn, args_list):
+    def starmap(self, fn, args_list):  # pyright: ignore[reportMissingParameterType]
         for args in args_list:
             yield fn(*args)
 
@@ -64,16 +64,12 @@ def get_time_averaged_trace(
 
 
 @njit
-def get_prob_choices(
-    probs: NDArray[np.float_], times: int
-) -> NDArray[np.intp] | None:
+def get_prob_choices(probs: NDArray[np.float_], times: int) -> NDArray[np.intp] | None:
     if times <= 0:
         return None
     choices = np.zeros((times,), dtype=np.intp)
     for i in range(times):
-        choices[i] = np.searchsorted(
-            np.cumsum(probs), np.random.random(), side="right"
-        )
+        choices[i] = np.searchsorted(np.cumsum(probs), np.random.random(), side="right")
     return choices
 
 

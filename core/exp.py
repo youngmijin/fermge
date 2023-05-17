@@ -11,13 +11,7 @@ from .alg_ge import calc_ge_confmat, calc_ge_v
 from .alg_gefair import GEFairSolver
 from .alg_rfp_rfn import calc_rfp_rfn
 from .exp_param import ParamSet, get_param_sets
-from .exp_utils import (
-    Cache,
-    FakePool,
-    get_mean_std,
-    get_prob_choices,
-    get_time_averaged_trace,
-)
+from .exp_utils import Cache, FakePool, get_mean_std, get_prob_choices, get_time_averaged_trace
 from .task_blc import BinaryLogisticClassification
 
 __all__ = ["ExpValidResult", "ExpTrainResult", "run_exp"]
@@ -59,7 +53,7 @@ def run_exp(
     if not (include_valid or keep_trace):
         warnings.warn(
             "Both include_valid and keep_trace are False. "
-            "This will result in no results being returned.",
+            + "This will result in no results being returned.",
             UserWarning,
         )
 
@@ -90,9 +84,7 @@ def run_exp(
 
                 for thr_idx, thr in enumerate(thr_candidates):
                     tn, fp, fn, tp = t_confmat_by_thr_idx[thr_idx]
-                    ge_list[thr_idx] = calc_ge_confmat(
-                        alpha, c, a, tn, fp, fn, tp
-                    )
+                    ge_list[thr_idx] = calc_ge_confmat(alpha, c, a, tn, fp, fn, tp)
 
                 t_ge_by_alpaca.set(ge_list, alpha=alpha, c=c, a=a)
 
@@ -171,8 +163,7 @@ def run_exp(
             v_thr_choices = get_prob_choices(v_thr_probs, valid_times)
 
             v_confmat_by_thr_idx = [
-                classifier.predict_valid(thr_candidates[thr_idx])[1]
-                for thr_idx in v_thr_idxs
+                classifier.predict_valid(thr_candidates[thr_idx])[1] for thr_idx in v_thr_idxs
             ]
             v_ge_by_thr_idx = np.array(
                 [
@@ -181,30 +172,21 @@ def run_exp(
                 ]
             )
             v_err_by_thr_idx = np.array(
-                [
-                    (fp + fn) / (tn + fp + fn + tp)
-                    for tn, fp, fn, tp in v_confmat_by_thr_idx
-                ]
+                [(fp + fn) / (tn + fp + fn + tp) for tn, fp, fn, tp in v_confmat_by_thr_idx]
             )
 
             v_ge = get_mean_std(v_ge_by_thr_idx, v_thr_probs, v_thr_choices)
             v_err = get_mean_std(v_err_by_thr_idx, v_thr_probs, v_thr_choices)
 
-            v_confmat_baseline = classifier.predict_valid(
-                thr_candidates[metric_baseline_idx]
-            )[1]
-            v_ge_baseline = calc_ge_confmat(
-                ps.alpha, ps.c, ps.a, *v_confmat_baseline
+            v_confmat_baseline = classifier.predict_valid(thr_candidates[metric_baseline_idx])[1]
+            v_ge_baseline = calc_ge_confmat(ps.alpha, ps.c, ps.a, *v_confmat_baseline)
+            v_err_baseline = (v_confmat_baseline[1] + v_confmat_baseline[2]) / sum(
+                v_confmat_baseline
             )
-            v_err_baseline = (
-                v_confmat_baseline[1] + v_confmat_baseline[2]
-            ) / sum(v_confmat_baseline)
 
             # collect testing results - 3 (v & rfp & rfn)
             v_v: tuple[float, float] | None = None
-            v_group_confmat: dict[
-                str, tuple[float, float, float, float]
-            ] | None = None
+            v_group_confmat: dict[str, tuple[float, float, float, float]] | None = None
             v_group_size: dict[str, int] | None = None
             v_group_ratio: dict[str, float] | None = None
             v_group_rfn: dict[str, tuple[float, float]] | None = None
@@ -214,47 +196,32 @@ def run_exp(
 
             if include_group_metrics:
                 group_cnt = len(classifier.group_names)
-                group_size = np.zeros(group_cnt, dtype=np.int_)
-                v_v_by_thr_idx = np.zeros(v_thr_cnt, dtype=np.float_)
-                v_group_confmat_by_thr_idx = np.zeros(
-                    (v_thr_cnt, 4, group_cnt), dtype=np.float_
-                )
-                v_group_rfp_by_thr_idx = np.zeros(
-                    (v_thr_cnt, group_cnt), dtype=np.float_
-                )
-                v_group_rfn_by_thr_idx = np.zeros(
-                    (v_thr_cnt, group_cnt), dtype=np.float_
-                )
-                v_total_rfp_by_thr_idx = np.zeros(v_thr_cnt, dtype=np.float_)
-                v_total_rfn_by_thr_idx = np.zeros(v_thr_cnt, dtype=np.float_)
+                group_size = np.zeros((group_cnt,), dtype=np.int_)
+                v_v_by_thr_idx = np.zeros((v_thr_cnt,), dtype=np.float_)
+                v_group_confmat_by_thr_idx = np.zeros((v_thr_cnt, 4, group_cnt), dtype=np.float_)
+                v_group_rfp_by_thr_idx = np.zeros((v_thr_cnt, group_cnt), dtype=np.float_)
+                v_group_rfn_by_thr_idx = np.zeros((v_thr_cnt, group_cnt), dtype=np.float_)
+                v_total_rfp_by_thr_idx = np.zeros((v_thr_cnt,), dtype=np.float_)
+                v_total_rfn_by_thr_idx = np.zeros((v_thr_cnt,), dtype=np.float_)
                 for i, thr_idx in enumerate(v_thr_idxs):
-                    total_confmat = classifier.predict_valid(
-                        thr_candidates[thr_idx]
-                    )[1].astype(float)
+                    total_confmat = classifier.predict_valid(thr_candidates[thr_idx])[1].tolist()
                     group_confmat = np.zeros((4, group_cnt), dtype=np.float_)
-                    for group_idx, group_name in enumerate(
-                        classifier.group_names
-                    ):
+                    for group_idx, group_name in enumerate(classifier.group_names):
                         _, confmat = classifier.predict_valid(
                             thr_candidates[thr_idx], group=group_name
                         )
                         group_confmat[:, group_idx] = confmat.astype(float)
                         group_size[group_idx] = np.sum(confmat)
-                    v_group_confmat_by_thr_idx[i] = group_confmat
-                    v_v_by_thr_idx[i] = calc_ge_v(
-                        ps.alpha, ps.c, ps.a, *group_confmat
-                    )
+                    v_group_confmat_by_thr_idx[i, :, :] = group_confmat
+                    v_v_by_thr_idx[i] = calc_ge_v(ps.alpha, ps.c, ps.a, *group_confmat)
                     (
                         group_rfp,
                         group_rfn,
                         total_rfp,
                         total_rfn,
-                    ) = calc_rfp_rfn(
-                        *total_confmat,  # type: ignore
-                        *group_confmat,  # type: ignore
-                    )
-                    v_group_rfp_by_thr_idx[i] = group_rfp
-                    v_group_rfn_by_thr_idx[i] = group_rfn
+                    ) = calc_rfp_rfn(*total_confmat, *group_confmat)
+                    v_group_rfp_by_thr_idx[i, :] = group_rfp
+                    v_group_rfn_by_thr_idx[i, :] = group_rfn
                     v_total_rfp_by_thr_idx[i] = total_rfp
                     v_total_rfn_by_thr_idx[i] = total_rfn
                 v_v = get_mean_std(v_v_by_thr_idx, v_thr_probs, v_thr_choices)
@@ -275,10 +242,8 @@ def run_exp(
                             )[0]
                             for i in range(4)
                         ]
-                    )  # type: ignore
-                    v_group_ratio[group_name] = group_size[group_idx] / np.sum(
-                        group_size
                     )
+                    v_group_ratio[group_name] = group_size[group_idx] / np.sum(group_size)
                     v_group_rfp[group_name] = get_mean_std(
                         v_group_rfp_by_thr_idx[:, group_idx],
                         v_thr_probs,
@@ -290,12 +255,8 @@ def run_exp(
                         v_thr_choices,
                     )
 
-                v_total_rfp = get_mean_std(
-                    v_total_rfp_by_thr_idx, v_thr_probs, v_thr_choices
-                )
-                v_total_rfn = get_mean_std(
-                    v_total_rfn_by_thr_idx, v_thr_probs, v_thr_choices
-                )
+                v_total_rfp = get_mean_std(v_total_rfp_by_thr_idx, v_thr_probs, v_thr_choices)
+                v_total_rfn = get_mean_std(v_total_rfn_by_thr_idx, v_thr_probs, v_thr_choices)
 
             valid_result = ExpValidResult(
                 ge=v_ge,
@@ -340,7 +301,7 @@ def run_exp(
             threading_mem_usage.pop(0)
 
         # execute
-        for runner_ret in pool.starmap(runner, args_to_be_used):  # type: ignore
+        for runner_ret in pool.starmap(runner, args_to_be_used):
             ps: ParamSet = runner_ret[0]
             train_result: ExpTrainResult = runner_ret[1]
             valid_result: ExpValidResult | None = runner_ret[2]
@@ -354,5 +315,5 @@ def run_exp(
         if len(threading_args) == 0:
             break
 
-    pool.close()  # type: ignore
+    pool.close()
     return results

@@ -5,7 +5,10 @@ import pandas as pd
 from numpy.typing import NDArray
 from sklearn.model_selection import train_test_split
 
-from .dataset import Dataset
+from data.dataset import Dataset
+from data.dataset_utils import GroupCriteria, make_group_indices, one_way_normalizer
+
+__all__ = ["LawSchool"]
 
 
 class LawSchool(Dataset):
@@ -21,9 +24,7 @@ class LawSchool(Dataset):
         self.X_valid: NDArray[np.float_] | None = None
         self.y_valid: NDArray[np.float_] | None = None
 
-        self.group_indices: dict[
-            str, tuple[NDArray[np.intp], NDArray[np.intp]]
-        ] | None = None
+        self.group_indices: dict[str, tuple[NDArray[np.intp], NDArray[np.intp]]] | None = None
 
     @property
     def name(self) -> str:
@@ -35,7 +36,7 @@ class LawSchool(Dataset):
 
     @property
     def file_remote_url(self) -> str:
-        return "https://www.dropbox.com/s/heyekivhlh0ipyo/law_dataset.csv?dl=1"
+        return "https://drive.google.com/file/d/1xvt9Pzykyp_mWLzGkWJ7qpb5ZawbeSz1/view"
 
     @property
     def file_md5_hash(self) -> str:
@@ -53,34 +54,33 @@ class LawSchool(Dataset):
         X_valid: pd.DataFrame
         y_train: pd.Series
         y_valid: pd.Series
-        X_train, X_valid, y_train, y_valid = train_test_split(
-            X, y, test_size=0.3, random_state=42
-        )  # type: ignore
+        X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.3, random_state=42)
 
         X_train = X_train.reset_index(drop=True)
         X_valid = X_valid.reset_index(drop=True)
         y_train = y_train.reset_index(drop=True)
         y_valid = y_valid.reset_index(drop=True)
 
+        male_gc: GroupCriteria = (
+            "male",
+            {
+                "X": lambda x: x == 0.0,
+                "O": lambda x: x != 0.0,
+            },
+        )
+
         if group_size == 2:
-            self.group_indices = {
-                "female": (
-                    X_train.index[X_train["male"] == 0.0].to_numpy(),
-                    X_valid.index[X_valid["male"] == 0.0].to_numpy(),
-                ),
-                "male": (
-                    X_train.index[X_train["male"] != 0.0].to_numpy(),
-                    X_valid.index[X_valid["male"] != 0.0].to_numpy(),
-                ),
-            }
+            self.group_indices = make_group_indices(X_train, X_valid, male_gc)
         else:
             raise ValueError("Invalid group size")
 
-        self.X_train = X_train.to_numpy()
-        self.X_valid = X_valid.to_numpy()
+        self.X_train, self.X_valid = one_way_normalizer(
+            X_train.to_numpy().astype(np.float32),
+            X_valid.to_numpy().astype(np.float32),
+        )
 
-        self.y_train = y_train.to_numpy()
-        self.y_valid = y_valid.to_numpy()
+        self.y_train = y_train.to_numpy().astype(np.float32)
+        self.y_valid = y_valid.to_numpy().astype(np.float32)
 
     @property
     def train_data(self) -> tuple[NDArray[np.float_], NDArray[np.float_]]:

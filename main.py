@@ -15,8 +15,8 @@ import rich.traceback
 import yaml
 from rich import print
 
+from core import BinaryLogisticClassification, get_param_sets, run_exp
 from data import Dataset
-from ferm_ge import BinaryLogisticClassification, get_param_sets, run_exp
 from plotting import make_plottingdata, parse_metric, plot_results, save_fig
 
 rich.traceback.install(show_locals=True, suppress=[numba])
@@ -96,9 +96,7 @@ def main(
 
     param_dicts = [
         {
-            "lambda_max": lambda_max[0]
-            if len(lambda_max) == 1
-            else lambda_max[unit_idx],
+            "lambda_max": lambda_max[0] if len(lambda_max) == 1 else lambda_max[unit_idx],
             "nu": nu[0] if len(nu) == 1 else nu[unit_idx],
             "alpha": alpha[0] if len(alpha) == 1 else alpha[unit_idx],
             "gamma": gamma[0] if len(gamma) == 1 else gamma[unit_idx],
@@ -114,7 +112,7 @@ def main(
         if (
             inspect.isclass(v)
             and (not inspect.isabstract(v))
-            and (type(v) != types.GenericAlias)
+            and (type(v) != types.GenericAlias)  # pyright: ignore[reportUnnecessaryComparison]
             and (v is not Dataset)
             and issubclass(v, Dataset)
         ):
@@ -148,17 +146,17 @@ def main(
     UNIT_PLOT_YPAD: float | None
 
     if study_type == "convergence":
-        UNIT_TRAIN_LOG_TRACE = True
-        UNIT_VALID_DO = False
-        UNIT_PLOT_X_AXIS = None
-        UNIT_PLOT_XPAD = None
-        UNIT_PLOT_YPAD = None
+        UNIT_TRAIN_LOG_TRACE = True  # pyright: ignore[reportConstantRedefinition]
+        UNIT_VALID_DO = False  # pyright: ignore[reportConstantRedefinition]
+        UNIT_PLOT_X_AXIS = None  # pyright: ignore[reportConstantRedefinition]
+        UNIT_PLOT_XPAD = None  # pyright: ignore[reportConstantRedefinition]
+        UNIT_PLOT_YPAD = None  # pyright: ignore[reportConstantRedefinition]
     elif study_type == "varying_gamma":
-        UNIT_TRAIN_LOG_TRACE = False
-        UNIT_VALID_DO = True
-        UNIT_PLOT_X_AXIS = "p.gamma"
-        UNIT_PLOT_XPAD = 0.0
-        UNIT_PLOT_YPAD = 0.15
+        UNIT_TRAIN_LOG_TRACE = False  # pyright: ignore[reportConstantRedefinition]
+        UNIT_VALID_DO = True  # pyright: ignore[reportConstantRedefinition]
+        UNIT_PLOT_X_AXIS = "p.gamma"  # pyright: ignore[reportConstantRedefinition]
+        UNIT_PLOT_XPAD = 0.0  # pyright: ignore[reportConstantRedefinition]
+        UNIT_PLOT_YPAD = 0.15  # pyright: ignore[reportConstantRedefinition]
     else:
         raise ValueError(f"invalid study_type: {study_type}")
 
@@ -189,9 +187,7 @@ def main(
             unit_param_dict_readable_plotting_figures = []
             for metric in metric_list:
                 if metric[:2] in ["t:", "v:"]:
-                    unit_param_dict_readable_plotting_figures.append(
-                        make_metric_readble(metric)
-                    )
+                    unit_param_dict_readable_plotting_figures.append(make_metric_readble(metric))
             unit_param_dict_readable_plotting["figures"].append(
                 unit_param_dict_readable_plotting_figures
             )
@@ -220,9 +216,7 @@ def main(
         )
         print(f"done in {time.time() - start_time:.2f} sec", flush=True, end="")
         if save_pkl:
-            results_pkl_path = os.path.join(
-                output_dir, f"{fname_prefix}_results.pkl"
-            )
+            results_pkl_path = os.path.join(output_dir, f"{fname_prefix}_results.pkl")
             with open(results_pkl_path, "wb") as bf:
                 pickle.dump(results, bf)
             print(f", results saved to {results_pkl_path}", flush=True)
@@ -300,9 +294,7 @@ if __name__ == "__main__":
         help="save results as pickle file (this may take a lot of disk space)",
     )
 
-    algopt = parser.add_argument_group(
-        "algorithm options", "refer to the paper for details"
-    )
+    algopt = parser.add_argument_group("algorithm options", "refer to the paper for details")
     algopt.add_argument(
         "--lambda_max",
         action="append",

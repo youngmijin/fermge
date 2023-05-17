@@ -5,12 +5,15 @@ import pandas as pd
 from numpy.typing import NDArray
 from sklearn.model_selection import train_test_split
 
-from .dataset import Dataset
-from .dataset_utils import (
+from data.dataset import Dataset
+from data.dataset_utils import (
     GroupCriteria,
     encode_onehot_columns,
     make_group_indices,
+    one_way_normalizer,
 )
+
+__all__ = ["Adult"]
 
 
 class Adult(Dataset):
@@ -27,9 +30,7 @@ class Adult(Dataset):
         self.X_valid: NDArray[np.float_] | None = None
         self.y_valid: NDArray[np.float_] | None = None
 
-        self.group_indices: dict[
-            str, tuple[NDArray[np.intp], NDArray[np.intp]]
-        ] | None = None
+        self.group_indices: dict[str, tuple[NDArray[np.intp], NDArray[np.intp]]] | None = None
 
     @property
     def name(self) -> str:
@@ -41,7 +42,7 @@ class Adult(Dataset):
 
     @property
     def file_remote_url(self) -> str:
-        return "https://www.dropbox.com/s/brf9er2w4kqijs8/adult.csv?dl=1"
+        return "https://drive.google.com/uc?id=1xpNXKrPR-VUQXNV9FrqIK5xe0yLkP46B"
 
     @property
     def file_md5_hash(self) -> str:
@@ -76,9 +77,7 @@ class Adult(Dataset):
         X_valid: pd.DataFrame
         y_train: pd.Series
         y_valid: pd.Series
-        X_train, X_valid, y_train, y_valid = train_test_split(
-            X, y, test_size=0.3, random_state=42
-        )  # type: ignore
+        X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.3, random_state=42)
 
         X_train = X_train.reset_index(drop=True)
         X_valid = X_valid.reset_index(drop=True)
@@ -92,11 +91,13 @@ class Adult(Dataset):
         else:
             raise ValueError("Invalid group size")
 
-        self.X_train = X_train.to_numpy()
-        self.X_valid = X_valid.to_numpy()
+        self.X_train, self.X_valid = one_way_normalizer(
+            X_train.to_numpy().astype(np.float32),
+            X_valid.to_numpy().astype(np.float32),
+        )
 
-        self.y_train = y_train.to_numpy()
-        self.y_valid = y_valid.to_numpy()
+        self.y_train = y_train.to_numpy().astype(np.float32)
+        self.y_valid = y_valid.to_numpy().astype(np.float32)
 
     @property
     def train_data(self) -> tuple[NDArray[np.float_], NDArray[np.float_]]:

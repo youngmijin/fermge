@@ -13,7 +13,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
 
-from ferm_ge import ExpTrainResult, ExpValidResult, ParamSet
+from core import ExpTrainResult, ExpValidResult, ParamSet
 
 __all__ = [
     "PlottingData",
@@ -213,7 +213,7 @@ def parse_metricopt(
     metricopt_items = metricopt.split(":")
     for metricopt_item in metricopt_items[1:]:
         if metricopt_item.startswith("f!"):
-            figsize = tuple(map(float, metricopt_item[2:].split(",")))  # type: ignore
+            figsize = tuple(map(float, metricopt_item[2:].split(",")))
         elif metricopt_item.startswith("x!"):
             xlabel = metricopt_item[2:]
         elif metricopt_item.startswith("y!"):
@@ -235,9 +235,7 @@ def make_plottingdata(
     x_axis: str | None = None,
     figsep_rules: list[str] = ["p.alpha"],
 ) -> Generator[PlottingData, None, None]:
-    assert (
-        confidence >= 0 and confidence < 1
-    ), "confidence value must be in [0, 1)"
+    assert confidence >= 0 and confidence < 1, "confidence value must be in [0, 1)"
     z_value = statistics.NormalDist().inv_cdf((1 + confidence) / 2)
 
     # metrics_left and metrics_right are lists of metric strings that are
@@ -280,9 +278,7 @@ def make_plottingdata(
             figsize, xlabel, ylabel, title, legend_loc = parse_metricopt(metric)
         else:
             raise ValueError(f"unknown metric: {metric}")
-    assert not (
-        use_train_results and use_valid_results
-    ), "cannot use both train and valid results"
+    assert not (use_train_results and use_valid_results), "cannot use both train and valid results"
 
     # figsep_rules is a list of parameter names that are used to separate
     # figures. For example, if figsep_rules = ["p.lambda_max", "p.nu"],
@@ -291,16 +287,14 @@ def make_plottingdata(
     for rule_str in figsep_rules:
         assert rule_str.startswith("p."), "rule must start with p."
         rule_name = rule_str[2:]
-        assert (
-            rule_name in ParamSet.__annotations__
-        ), f"unknown parameter rule: {rule_name}"
+        assert rule_name in ParamSet.__annotations__, f"unknown parameter rule: {rule_name}"
         figsep_base = []
         for ps in results:
             figsep_base.append((rule_name, float(getattr(ps, rule_name))))
         figsep_baselist.append(set(figsep_base))
 
     figsep: tuple[tuple[str, float]]
-    for figsep in product(*figsep_baselist):  # type: ignore
+    for figsep in product(*figsep_baselist):
         ps_list: list[ParamSet] = []
         for ps in results:
             use_this = True
@@ -353,9 +347,7 @@ def make_plottingdata(
                     data.linewidth[part_id] = linewidth
 
                     if legend_label is not None:
-                        data.legend[part_id] = legend_label.format(
-                            **ps.__dict__
-                        )
+                        data.legend[part_id] = legend_label.format(**ps.__dict__)
 
                     data.x[part_id], data.y[part_id] = __resample(
                         np.array(
@@ -401,24 +393,17 @@ def make_plottingdata(
                 if exp_err is not None:
                     err_list = []
                     for ps in ps_list_filtered:
-                        err_list.append(
-                            float(eval(exp_err, results[ps][1].__dict__))
-                            * z_value
-                        )
+                        err_list.append(float(eval(exp_err, results[ps][1].__dict__)) * z_value)
                     data.err[part_id] = err_list
 
                 if exp_base is not None:
                     base_list = []
                     for ps in ps_list_filtered:
-                        base_list.append(
-                            float(eval(exp_base, results[ps][1].__dict__))
-                        )
+                        base_list.append(float(eval(exp_base, results[ps][1].__dict__)))
                     data.base[part_id] = list(set(base_list))
 
                 if legend_label is not None:
-                    data.legend[part_id] = legend_label.format(
-                        **ps_list_filtered[0].__dict__
-                    )
+                    data.legend[part_id] = legend_label.format(**ps_list_filtered[0].__dict__)
 
                 x_list = []
                 y_list = []
@@ -474,9 +459,7 @@ def plot_results(
         legend = data.legend[k]
 
         y = np.array(data.y[k]).astype(np.float_)
-        x = (
-            np.array(data.x[k]) if data.x[k] is not None else np.arange(len(y))
-        ).astype(np.float_)
+        x = (np.array(data.x[k]) if data.x[k] is not None else np.arange(len(y))).astype(np.float_)
 
         if data.err[k] is not None:
             err = np.array(data.err[k]).astype(np.float_)
