@@ -13,7 +13,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
 
-from core import ExpTrainResult, ExpValidResult, ParamSet
+from fermge import ExpTrainResult, ExpValidResult, ParamSet
 
 __all__ = [
     "PlottingData",

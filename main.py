@@ -15,7 +15,7 @@ import rich.traceback
 import yaml
 from rich import print
 
-from core import BinaryLogisticClassification, get_param_sets, run_exp
+from fermge import BinaryLogisticClassification, get_param_sets, run_exp
 from data import Dataset
 from plotting import make_plottingdata, parse_metric, plot_results, save_fig
 

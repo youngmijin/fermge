@@ -32,7 +32,7 @@ build-backend = "poetry.core.masonry.api"
 line-length = 100
 
 [tool.pyright]
-include = ["core", "data"]
+include = ["fermge", "data"]
 pythonVersion = "3.10"
 pythonPlatform = "Linux"
 typeCheckingMode = "basic"
