@@ -94,7 +94,7 @@ class PlottingData:
         )
 
 
-def __resample(
+def resample_for_plotting(
     array: NDArray[np.float_],
     sampling_threshold: int | None = 2000000,
     exclude_first: int = 10000,
@@ -349,7 +349,7 @@ def make_plottingdata(
                     if legend_label is not None:
                         data.legend[part_id] = legend_label.format(**ps.__dict__)
 
-                    data.x[part_id], data.y[part_id] = __resample(
+                    data.x[part_id], data.y[part_id] = resample_for_plotting(
                         np.array(
                             eval(
                                 exp,

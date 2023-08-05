@@ -30,6 +30,8 @@ https://arxiv.org/abs/2202.11966
 
 Type `main.py -h` for more options.
 
+Check `example.ipynb` for detailed API usage.
+
 
 #### __NOTE__
 
