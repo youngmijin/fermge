@@ -28,13 +28,12 @@ https://arxiv.org/abs/2202.11966
 
 3. Then the outputs will be saved in `./output/` directory.
 
-Type `main.py -h` for more options.
+Type `main.py -h` for more CLI options.
 
 Check `example.ipynb` for detailed API usage.
 
 
 #### __NOTE__
 
-* This code is not optimized for space efficiency. It may require a lot of memory.
-* Running time varies depending on the parameters. It may take a few seconds to an hour.
-* Feel free to leave an issue if you have any questions.
+* This code is not optimized for space efficiency.
+* Running time varies depending on the parameters.

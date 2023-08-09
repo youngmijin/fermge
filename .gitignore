@@ -23,6 +23,10 @@ data/*
 ### Output ###
 output/
 
+### Testing ###
+test/
+test_*/
+
 ### Misc ###
 *.rb
 *.sh

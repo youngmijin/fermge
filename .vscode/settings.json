@@ -22,9 +22,7 @@
   "files.trimTrailingWhitespace": true,
   "python.analysis.diagnosticMode": "openFilesOnly",
   "python.defaultInterpreterPath": "./.venv/bin/python",
-  "python.formatting.provider": "none",
   "python.languageServer": "Pylance",
-  "python.linting.enabled": false,
   "[properties]": {
     "editor.trimAutoWhitespace": false,
     "files.trimTrailingWhitespace": false
