@@ -1,6 +1,3 @@
-import importlib
-import inspect
-import types
 from itertools import product
 from typing import Callable, TypeVar
 
@@ -9,13 +6,10 @@ import pandas as pd
 from numpy.typing import NDArray
 from rich import print
 
-from datasets.dataset import Dataset
-
 __all__ = [
     "make_group_indices",
     "encode_onehot_columns",
     "one_way_normalizer",
-    "get_dataset_class",
 ]
 
 # NOTE: A tuple of (
@@ -93,21 +87,3 @@ def one_way_normalizer(X_train: NDArray[T], X_valid: NDArray[T]) -> tuple[NDArra
     X_train_norm = ((X_train_float - X_train_mean) / X_train_std).astype(X_train.dtype)
     X_valid_norm = ((X_valid_float - X_train_mean) / X_train_std).astype(X_valid.dtype)
     return X_train_norm, X_valid_norm
-
-
-def get_dataset_class(dataset_name: str) -> type[Dataset]:
-    dataset_class = None
-    for v in importlib.import_module(f"datasets.{dataset_name}").__dict__.values():
-        if (
-            inspect.isclass(v)
-            and (not inspect.isabstract(v))
-            and (type(v) != types.GenericAlias)  # pyright: ignore[reportUnnecessaryComparison]
-            and (v is not Dataset)
-            and issubclass(v, Dataset)
-        ):
-            dataset_class = v
-            break
-    if dataset_class is None:
-        raise ValueError(f"invalid dataset: {dataset_name}")
-
-    return dataset_class

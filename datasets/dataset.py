@@ -1,10 +1,15 @@
 import hashlib
+import importlib
+import inspect
 import os
+import types
 from abc import ABC, abstractmethod
 
 import gdown
 import numpy as np
 from numpy.typing import NDArray
+
+from .dataset_utils import GroupCriteria
 
 __all__ = ["Dataset"]
 
@@ -46,7 +51,11 @@ class Dataset(ABC):
             raise RuntimeError("downloaded file is corrupted")
 
     @abstractmethod
-    def load(self, group_size: int):
+    def load(self, *group_criterias: GroupCriteria):
+        pass
+
+    @abstractmethod
+    def get_group_criterias(self, n_groups: int) -> list[GroupCriteria]:
         pass
 
     @property
@@ -68,3 +77,21 @@ class Dataset(ABC):
     @abstractmethod
     def valid_group_indices(self) -> dict[str, NDArray[np.intp]]:
         pass
+
+
+def get_dataset_class(dataset_name: str) -> type[Dataset]:
+    dataset_class = None
+    for v in importlib.import_module(f"datasets.{dataset_name}").__dict__.values():
+        if (
+            inspect.isclass(v)
+            and (not inspect.isabstract(v))
+            and (type(v) != types.GenericAlias)  # pyright: ignore[reportUnnecessaryComparison]
+            and (v is not Dataset)
+            and issubclass(v, Dataset)
+        ):
+            dataset_class = v
+            break
+    if dataset_class is None:
+        raise ValueError(f"invalid dataset: {dataset_name}")
+
+    return dataset_class

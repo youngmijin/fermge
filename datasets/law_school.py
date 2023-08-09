@@ -42,7 +42,7 @@ class LawSchool(Dataset):
     def file_md5_hash(self) -> str:
         return "3296294f79ddd38d8f5fe31499f6ee12"
 
-    def load(self, group_size: int = 2):
+    def load(self, *group_criterias: GroupCriteria):
         law = pd.read_csv(self.file_local_path)
         law = law.dropna()
         law = law.reset_index(drop=True)
@@ -61,18 +61,7 @@ class LawSchool(Dataset):
         y_train = y_train.reset_index(drop=True)
         y_valid = y_valid.reset_index(drop=True)
 
-        male_gc: GroupCriteria = (
-            "male",
-            {
-                "X": lambda x: x == 0.0,
-                "O": lambda x: x != 0.0,
-            },
-        )
-
-        if group_size == 2:
-            self.group_indices = make_group_indices(X_train, X_valid, male_gc)
-        else:
-            raise ValueError("Invalid group size")
+        self.group_indices = make_group_indices(X_train, X_valid, *group_criterias)
 
         self.X_train, self.X_valid = one_way_normalizer(
             X_train.to_numpy().astype(np.float32),
@@ -81,6 +70,12 @@ class LawSchool(Dataset):
 
         self.y_train = y_train.to_numpy().astype(np.float32)
         self.y_valid = y_valid.to_numpy().astype(np.float32)
+
+    def get_group_criterias(self, n_groups: int) -> list[GroupCriteria]:
+        if n_groups == 2:
+            return [("male", {"X": lambda x: x == 0.0, "O": lambda x: x != 0.0})]
+        else:
+            raise NotImplementedError
 
     @property
     def train_data(self) -> tuple[NDArray[np.float_], NDArray[np.float_]]:

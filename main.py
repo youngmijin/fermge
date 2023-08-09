@@ -106,7 +106,8 @@ def main(
     # load dataset
     dataset = get_dataset_class(dataset_name)()
     dataset.download(remote_url=dataset_url)
-    dataset.load(group_size)
+    dataset_gcs = dataset.get_group_criterias(group_size)
+    dataset.load(*dataset_gcs)
     print("dataset:", dataset.name)
 
     # pre-train classifier

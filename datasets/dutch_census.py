@@ -42,7 +42,7 @@ class DutchCensus(Dataset):
     def file_md5_hash(self) -> str:
         return "2f485f59ef3bc471e4ab70f66c785171"
 
-    def load(self, group_size: int = 2):
+    def load(self, *group_criterias: GroupCriteria):
         census = pd.read_csv(self.file_local_path)
         census = census.dropna()
         census = census.replace({"5_4_9": 0, "2_1": 1})
@@ -62,18 +62,7 @@ class DutchCensus(Dataset):
         y_train = y_train.reset_index(drop=True)
         y_valid = y_valid.reset_index(drop=True)
 
-        sex_gc: GroupCriteria = (
-            "sex",
-            {
-                "female": [2],
-                "male": [1],
-            },
-        )
-
-        if group_size == 2:
-            self.group_indices = make_group_indices(X_train, X_valid, sex_gc)
-        else:
-            raise ValueError("Invalid group size")
+        self.group_indices = make_group_indices(X_train, X_valid, *group_criterias)
 
         self.X_train, self.X_valid = one_way_normalizer(
             X_train.to_numpy().astype(np.float32),
@@ -82,6 +71,12 @@ class DutchCensus(Dataset):
 
         self.y_train = y_train.to_numpy().astype(np.float32)
         self.y_valid = y_valid.to_numpy().astype(np.float32)
+
+    def get_group_criterias(self, n_groups: int) -> list[GroupCriteria]:
+        if n_groups == 2:
+            return [("sex", {"female": [2], "male": [1]})]
+        else:
+            raise NotImplementedError
 
     @property
     def train_data(self) -> tuple[NDArray[np.float_], NDArray[np.float_]]:
