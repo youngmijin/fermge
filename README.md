@@ -28,9 +28,9 @@ https://arxiv.org/abs/2202.11966
 
 3. Then the outputs will be saved in `./output/` directory.
 
-Type `main.py -h` for more CLI options.
+Type `python main.py -h` for more CLI options.
 
-Check `example.ipynb` for detailed API usage.
+Check [`example.ipynb`](./example.ipynb) for API usage.
 
 
 #### __NOTE__

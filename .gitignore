@@ -26,6 +26,7 @@ output/
 ### Testing ###
 test/
 test_*/
+test_*.ipynb
 
 ### Misc ###
 *.rb
