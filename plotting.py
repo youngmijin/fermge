@@ -38,7 +38,14 @@ class PlottingData:
 
     title: str | None
     xlabel: str | None
-    ylabel: str | None
+    xlabelcolor: str | None
+    xtickcolor: str | None
+    ylabel_left: str | None
+    ylabel_right: str | None
+    ylabelcolor_left: str | None
+    ylabelcolor_right: str | None
+    ytickcolor_left: str | None
+    ytickcolor_right: str | None
     legend_loc: str
     figsize: tuple[float, float]
 
@@ -59,7 +66,13 @@ class PlottingData:
             "name": self.name,
             "title": self.title,
             "xlabel": self.xlabel,
-            "ylabel": self.ylabel,
+            "xlabelcolor": self.xlabelcolor,
+            "ylabel_left": self.ylabel_left,
+            "ylabel_right": self.ylabel_right,
+            "ylabelcolor_left": self.ylabelcolor_left,
+            "ylabelcolor_right": self.ylabelcolor_right,
+            "ytickcolor_left": self.ytickcolor_left,
+            "ytickcolor_right": self.ytickcolor_right,
             "legend_loc": self.legend_loc,
             "figsize": self.figsize,
             "y": self.y,
@@ -79,7 +92,14 @@ class PlottingData:
             name="unknown",
             title=None,
             xlabel=None,
-            ylabel=None,
+            xlabelcolor=None,
+            xtickcolor=None,
+            ylabel_left=None,
+            ylabel_right=None,
+            ylabelcolor_left=None,
+            ylabelcolor_right=None,
+            ytickcolor_left=None,
+            ytickcolor_right=None,
             legend_loc="best",
             figsize=DEFAULT_FIGSIZE,
             y={},
@@ -200,14 +220,47 @@ def parse_metric(
     )
 
 
+def _parse_strnone_tuple(option: str) -> tuple[str | None, str | None]:
+    retval0: str | None = None
+    retval1: str | None = None
+
+    options = list(map(lambda s: s.strip(), option.split(",")))
+    if len(options) == 1:
+        retval0 = options[0]
+    else:
+        retval0 = options[0]
+        retval1 = options[1]
+
+    if retval0 == "":
+        retval0 = None
+    if retval1 == "":
+        retval1 = None
+
+    return retval0, retval1
+
+
 def parse_metricopt(
     metricopt: str,
-) -> tuple[tuple[float, float], str | None, str | None, str | None, str]:
-    figsize = DEFAULT_FIGSIZE
-    xlabel = None
-    ylabel = None
-    title = None
-    legend_loc = "best"
+) -> tuple[
+    tuple[float, float],
+    str | None,
+    str | None,
+    str | None,
+    tuple[str | None, str | None],
+    tuple[str | None, str | None],
+    tuple[str | None, str | None],
+    str | None,
+    str,
+]:
+    figsize: tuple[float, float] = DEFAULT_FIGSIZE
+    xlabel: str | None = None
+    xlabelcolor: str | None = None
+    xtickcolor: str | None = None
+    ylabel: tuple[str | None, str | None] = None, None
+    ylabelcolor: tuple[str | None, str | None] = None, None
+    ytickcolor: tuple[str | None, str | None] = None, None
+    title: str | None = None
+    legend_loc: str = "best"
 
     assert metricopt.startswith("fig:"), "metricopt must start with fig:"
     metricopt_items = metricopt.split(":")
@@ -216,8 +269,16 @@ def parse_metricopt(
             figsize = tuple(map(float, metricopt_item[2:].split(",")))
         elif metricopt_item.startswith("x!"):
             xlabel = metricopt_item[2:]
+        elif metricopt_item.startswith("xlc!"):
+            xlabelcolor = metricopt_item[2:]
+        elif metricopt_item.startswith("xtc!"):
+            xtickcolor = metricopt_item[2:]
         elif metricopt_item.startswith("y!"):
-            ylabel = metricopt_item[2:]
+            ylabel = _parse_strnone_tuple(metricopt_item[2:])
+        elif metricopt_item.startswith("ylc!"):
+            ylabelcolor = _parse_strnone_tuple(metricopt_item[4:])
+        elif metricopt_item.startswith("ytc!"):
+            ytickcolor = _parse_strnone_tuple(metricopt_item[4:])
         elif metricopt_item.startswith("t!"):
             title = metricopt_item[2:]
         elif metricopt_item.startswith("l!"):
@@ -225,7 +286,17 @@ def parse_metricopt(
         else:
             raise ValueError(f"unknown metricopt item: {metricopt_item}")
 
-    return figsize, xlabel, ylabel, title, legend_loc
+    return (
+        figsize,
+        xlabel,
+        xlabelcolor,
+        xtickcolor,
+        ylabel,
+        ylabelcolor,
+        ytickcolor,
+        title,
+        legend_loc,
+    )
 
 
 def make_plottingdata(
@@ -251,14 +322,21 @@ def make_plottingdata(
     #     - l!: use the given legend (optional; default: None)
     #     - a!: use the given axis (optional; default: left)
     #     - n!: use the given name (optional; default: extracted from EXPR1)
-    #     - f!: use the given filter (optional; default: no filtering)
+    #     - f!: use the given paramset filter (optional; default: no filtering)
     #     - w!: use the given linewidth (optional; default: 1.5)
     assert len(metrics) > 0, "metrics must not be empty"
     use_train_results = False
     use_valid_results = False
     figsize = DEFAULT_FIGSIZE
     xlabel = None
-    ylabel = None
+    xlabelcolor = None
+    xtickcolor = None
+    ylabel_left = None
+    ylabel_right = None
+    ylabelcolor_left = None
+    ylabelcolor_right = None
+    ytickcolor_left = None
+    ytickcolor_right = None
     title = None
     legend_loc = "best"
     metrics4plot = []
@@ -275,7 +353,20 @@ def make_plottingdata(
             use_valid_results = True
             metrics4plot.append(metric)
         elif metric.startswith("fig:"):
-            figsize, xlabel, ylabel, title, legend_loc = parse_metricopt(metric)
+            (
+                figsize,
+                xlabel,
+                xlabelcolor,
+                xtickcolor,
+                ylabel,
+                ylabelcolor,
+                ytickcolor,
+                title,
+                legend_loc,
+            ) = parse_metricopt(metric)
+            ylabel_left, ylabel_right = ylabel
+            ylabelcolor_left, ylabelcolor_right = ylabelcolor
+            ytickcolor_left, ytickcolor_right = ytickcolor
         else:
             raise ValueError(f"unknown metric: {metric}")
     assert not (use_train_results and use_valid_results), "cannot use both train and valid results"
@@ -314,7 +405,14 @@ def make_plottingdata(
         data = PlottingData.new()
         data.figsize = figsize
         data.xlabel = xlabel
-        data.ylabel = ylabel
+        data.xlabelcolor = xlabelcolor
+        data.xtickcolor = xtickcolor
+        data.ylabel_left = ylabel_left
+        data.ylabel_right = ylabel_right
+        data.ylabelcolor_left = ylabelcolor_left
+        data.ylabelcolor_right = ylabelcolor_right
+        data.ytickcolor_left = ytickcolor_left
+        data.ytickcolor_right = ytickcolor_right
         data.title = title
         data.legend_loc = legend_loc
         data_names = []
@@ -547,8 +645,22 @@ def plot_results(
     # draw labels
     if data.xlabel is not None:
         axl.set_xlabel(data.xlabel)
-    if data.ylabel is not None:
-        axl.set_ylabel(data.ylabel)
+    if data.xlabelcolor is not None:
+        axl.xaxis.label.set_color(data.xlabelcolor)
+    if data.xtickcolor is not None:
+        axl.tick_params(axis="x", colors=data.xtickcolor)
+    if data.ylabel_left is not None:
+        axl.set_ylabel(data.ylabel_left)
+    if data.ylabel_right is not None:
+        axr.set_ylabel(data.ylabel_right)
+    if data.ylabelcolor_left is not None:
+        axl.yaxis.label.set_color(data.ylabelcolor_left)
+    if data.ylabelcolor_right is not None:
+        axr.yaxis.label.set_color(data.ylabelcolor_right)
+    if data.ytickcolor_left is not None:
+        axl.tick_params(axis="y", colors=data.ytickcolor_left)
+    if data.ytickcolor_right is not None:
+        axr.tick_params(axis="y", colors=data.ytickcolor_right)
 
     # draw legend
     if use_legend:

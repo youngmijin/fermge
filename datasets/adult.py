@@ -5,17 +5,23 @@ import pandas as pd
 from numpy.typing import NDArray
 from sklearn.model_selection import train_test_split
 
-from data.dataset import Dataset
-from data.dataset_utils import GroupCriteria, make_group_indices, one_way_normalizer
+from datasets.dataset import Dataset
+from datasets.dataset_utils import (
+    GroupCriteria,
+    encode_onehot_columns,
+    make_group_indices,
+    one_way_normalizer,
+)
 
-__all__ = ["LawSchool"]
+__all__ = ["Adult"]
 
 
-class LawSchool(Dataset):
+class Adult(Dataset):
     """
-    Wightman, L. F. (1998).
-    LSAC national longitudinal bar passage study.
-    LSAC research report series.
+    Kohavi, R. (1996).
+    Scaling up the accuracy of Naive-Bayes classifiers: a decision-tree hybrid.
+    In Proceedings of the 2nd International Conference on Knowledge Discovery
+    and Data mining, Portland, 1996 (pp. 202-207).
     """
 
     def __init__(self):
@@ -28,27 +34,44 @@ class LawSchool(Dataset):
 
     @property
     def name(self) -> str:
-        return "law_school"
+        return "adult"
 
     @property
     def file_local_path(self) -> str:
-        return os.path.join(os.path.dirname(__file__), "law_dataset.csv")
+        return os.path.join(os.path.dirname(__file__), "adult.csv")
 
     @property
     def file_remote_url(self) -> str:
-        return "https://drive.google.com/file/d/1xvt9Pzykyp_mWLzGkWJ7qpb5ZawbeSz1/view"
+        return "https://drive.google.com/uc?id=1xpNXKrPR-VUQXNV9FrqIK5xe0yLkP46B"
 
     @property
     def file_md5_hash(self) -> str:
-        return "3296294f79ddd38d8f5fe31499f6ee12"
+        return "46a9b0988c83b02d27640bf9ced3ab95"
 
     def load(self, group_size: int = 2):
-        law = pd.read_csv(self.file_local_path)
-        law = law.dropna()
-        law = law.reset_index(drop=True)
+        adult = pd.read_csv(self.file_local_path)
+        adult = adult.drop(columns=["fnlwgt"])
+        adult = adult.replace({"?": np.nan})
+        adult = adult.dropna()
+        adult = adult.replace({"<=50K": 0, ">50K": 1})
+        adult = adult.replace({"Female": 0, "Male": 1})
+        adult = adult.reset_index(drop=True)
 
-        X = law.drop(columns=["pass_bar"])
-        y = law["pass_bar"]
+        adult = encode_onehot_columns(
+            adult,
+            [
+                "workclass",
+                "education",
+                "marital-status",
+                "occupation",
+                "relationship",
+                "race",
+                "native-country",
+            ],
+        )
+
+        X = adult.drop(columns=["income"])
+        y = adult["income"]
 
         X_train: pd.DataFrame
         X_valid: pd.DataFrame
@@ -61,16 +84,10 @@ class LawSchool(Dataset):
         y_train = y_train.reset_index(drop=True)
         y_valid = y_valid.reset_index(drop=True)
 
-        male_gc: GroupCriteria = (
-            "male",
-            {
-                "X": lambda x: x == 0.0,
-                "O": lambda x: x != 0.0,
-            },
-        )
+        gender_gc: GroupCriteria = ("gender", {"female": [0], "male": [1]})
 
         if group_size == 2:
-            self.group_indices = make_group_indices(X_train, X_valid, male_gc)
+            self.group_indices = make_group_indices(X_train, X_valid, gender_gc)
         else:
             raise ValueError("Invalid group size")
 

@@ -1,11 +1,8 @@
 import argparse
 import gc
-import importlib
-import inspect
 import os
 import pickle
 import time
-import types
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -15,8 +12,8 @@ import rich.traceback
 import yaml
 from rich import print
 
+from datasets import get_dataset_class
 from fermge import BinaryLogisticClassification, get_param_sets, run_exp
-from data import Dataset
 from plotting import make_plottingdata, parse_metric, plot_results, save_fig
 
 rich.traceback.install(show_locals=True, suppress=[numba])
@@ -59,7 +56,7 @@ def main(
     a: list[list[float]],
     # run options
     study_type: str,
-    dataset: str,
+    dataset_name: str,
     dataset_url: str | None,
     group_size: int,
     blc_max_iter: int,
@@ -107,34 +104,21 @@ def main(
     ]
 
     # load dataset
-    data_class = None
-    for v in importlib.import_module(f"data.{dataset}").__dict__.values():
-        if (
-            inspect.isclass(v)
-            and (not inspect.isabstract(v))
-            and (type(v) != types.GenericAlias)  # pyright: ignore[reportUnnecessaryComparison]
-            and (v is not Dataset)
-            and issubclass(v, Dataset)
-        ):
-            data_class = v
-            break
-    if data_class is None:
-        raise ValueError(f"invalid dataset: {dataset}")
-    data = data_class()
-    data.download(remote_url=dataset_url)
-    data.load(group_size)
-    print("dataset:", data.name)
+    dataset = get_dataset_class(dataset_name)()
+    dataset.download(remote_url=dataset_url)
+    dataset.load(group_size)
+    print("dataset:", dataset.name)
 
     # pre-train classifier
     classifier = BinaryLogisticClassification(max_iter=blc_max_iter)
-    classifier.train(*data.train_data)
-    classifier.valid(*data.valid_data)
+    classifier.train(*dataset.train_data)
+    classifier.valid(*dataset.valid_data)
     classifier.set_group(
-        data.train_group_indices,
-        data.valid_group_indices,
+        dataset.train_group_indices,
+        dataset.valid_group_indices,
     )
     if calc_between_groups:
-        print("groups:", len(data.train_group_indices))
+        print("groups:", len(dataset.train_group_indices))
 
     print()
 
@@ -165,11 +149,11 @@ def main(
         print(f"<🧩 experiment unit [ {unit_idx + 1} / {len(param_dicts)} ]>")
         print("param_dict:", unit_param_dict)
         print("param_sets:", len(get_param_sets(unit_param_dict)))
-        fname_prefix = f"{run_name}_{data.name}_{unit_idx}"
+        fname_prefix = f"{run_name}_{dataset.name}_{unit_idx}"
 
         # save parameter dictionary
         unit_param_dict_readable: dict[str, Any] = {}
-        unit_param_dict_readable["dataset"] = data.name
+        unit_param_dict_readable["dataset"] = dataset.name
         unit_param_dict_readable["thr_granularity"] = thr_granularity
         unit_param_dict_readable["valid_times"] = valid_times
         unit_param_dict_readable["blc_max_iter"] = blc_max_iter
@@ -350,11 +334,11 @@ if __name__ == "__main__":
         help="study type to run",
     )
     expopt.add_argument(
-        "--dataset",
+        "--dataset_name",
         type=str,
         required=True,
         metavar="NAME",
-        help="dataset name; must be same with the python file name in ./data",
+        help="dataset name; must be same with the python file name in ./datasets",
     )
     expopt.add_argument(
         "--dataset_url",

@@ -21,10 +21,10 @@ https://arxiv.org/abs/2202.11966
 2. Run experiments
 
         # plot convergence curves
-        python main.py --study_type convergence --dataset adult --metrics t:ge_bar_trace --metrics t:err_bar_trace --lambda_max 20.0 --nu 0.01 --alpha 0.0 --gamma 0.04 --c 8.0 --a 5.0
+        python main.py --study_type convergence --dataset_name adult --metrics t:ge_bar_trace --metrics t:err_bar_trace --lambda_max 20.0 --nu 0.01 --alpha 0.0 --gamma 0.04 --c 8.0 --a 5.0
 
         # plot I_alpha and error by varying gamma values
-        python main.py --study_type varying_gamma --dataset adult --metrics v:ge[0] --metrics v:err[0] --lambda_max 20.0 --nu 0.01 --alpha 0.0 --gamma "np.linspace(0.02, 0.07, 20)" --c 8.0 --a 5.0
+        python main.py --study_type varying_gamma --dataset_name adult --metrics v:ge[0] --metrics v:err[0] --lambda_max 20.0 --nu 0.01 --alpha 0.0 --gamma "np.linspace(0.02, 0.07, 20)" --c 8.0 --a 5.0
 
 3. Then the outputs will be saved in `./output/` directory.
 
@@ -35,5 +35,4 @@ Check [`example.ipynb`](./example.ipynb) for API usage.
 
 #### __NOTE__
 
-* This code is not optimized for space efficiency.
-* Running time varies depending on the parameters.
+* Running time varies depending on the parameters. Above two CLI examples in *USAGE* section will take about 30 seconds each on general computing environment.

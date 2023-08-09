@@ -5,23 +5,17 @@ import pandas as pd
 from numpy.typing import NDArray
 from sklearn.model_selection import train_test_split
 
-from data.dataset import Dataset
-from data.dataset_utils import (
-    GroupCriteria,
-    encode_onehot_columns,
-    make_group_indices,
-    one_way_normalizer,
-)
+from datasets.dataset import Dataset
+from datasets.dataset_utils import GroupCriteria, make_group_indices, one_way_normalizer
 
-__all__ = ["Adult"]
+__all__ = ["DutchCensus"]
 
 
-class Adult(Dataset):
+class DutchCensus(Dataset):
     """
-    Kohavi, R. (1996).
-    Scaling up the accuracy of Naive-Bayes classifiers: a decision-tree hybrid.
-    In Proceedings of the 2nd International Conference on Knowledge Discovery
-    and Data mining, Portland, 1996 (pp. 202-207).
+    Van der Laan, P. (2000).
+    The 2001 census in the netherlands.
+    In Conference the Census of Population.
     """
 
     def __init__(self):
@@ -34,44 +28,28 @@ class Adult(Dataset):
 
     @property
     def name(self) -> str:
-        return "adult"
+        return "dutch_census"
 
     @property
     def file_local_path(self) -> str:
-        return os.path.join(os.path.dirname(__file__), "adult.csv")
+        return os.path.join(os.path.dirname(__file__), "dutch_census_2001.csv")
 
     @property
     def file_remote_url(self) -> str:
-        return "https://drive.google.com/uc?id=1xpNXKrPR-VUQXNV9FrqIK5xe0yLkP46B"
+        return "https://drive.google.com/file/d/1xtgcOsvickJoKSzizhsR8PN8WPDIJTYN/view"
 
     @property
     def file_md5_hash(self) -> str:
-        return "46a9b0988c83b02d27640bf9ced3ab95"
+        return "2f485f59ef3bc471e4ab70f66c785171"
 
     def load(self, group_size: int = 2):
-        adult = pd.read_csv(self.file_local_path)
-        adult = adult.drop(columns=["fnlwgt"])
-        adult = adult.replace({"?": np.nan})
-        adult = adult.dropna()
-        adult = adult.replace({"<=50K": 0, ">50K": 1})
-        adult = adult.replace({"Female": 0, "Male": 1})
-        adult = adult.reset_index(drop=True)
+        census = pd.read_csv(self.file_local_path)
+        census = census.dropna()
+        census = census.replace({"5_4_9": 0, "2_1": 1})
+        census = census.reset_index(drop=True)
 
-        adult = encode_onehot_columns(
-            adult,
-            [
-                "workclass",
-                "education",
-                "marital-status",
-                "occupation",
-                "relationship",
-                "race",
-                "native-country",
-            ],
-        )
-
-        X = adult.drop(columns=["income"])
-        y = adult["income"]
+        X = census.drop(columns=["occupation"])
+        y = census["occupation"]
 
         X_train: pd.DataFrame
         X_valid: pd.DataFrame
@@ -84,10 +62,16 @@ class Adult(Dataset):
         y_train = y_train.reset_index(drop=True)
         y_valid = y_valid.reset_index(drop=True)
 
-        gender_gc: GroupCriteria = ("gender", {"female": [0], "male": [1]})
+        sex_gc: GroupCriteria = (
+            "sex",
+            {
+                "female": [2],
+                "male": [1],
+            },
+        )
 
         if group_size == 2:
-            self.group_indices = make_group_indices(X_train, X_valid, gender_gc)
+            self.group_indices = make_group_indices(X_train, X_valid, sex_gc)
         else:
             raise ValueError("Invalid group size")
 

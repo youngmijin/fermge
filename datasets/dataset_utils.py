@@ -9,7 +9,7 @@ import pandas as pd
 from numpy.typing import NDArray
 from rich import print
 
-from data.dataset import Dataset
+from datasets.dataset import Dataset
 
 __all__ = [
     "make_group_indices",
@@ -18,7 +18,13 @@ __all__ = [
     "get_dataset_class",
 ]
 
-#: A tuple of (group criteria name, (group name, values associated with group or function to determine group)
+# NOTE: A tuple of (
+#           grouping criteria name,
+#           (
+#               group name,
+#               values associated with group or function handling pd.Series to determine group
+#           )
+#       )
 GroupCriteria = tuple[str, dict[str, list[int] | Callable[[pd.Series], pd.Series]]]
 
 
@@ -89,9 +95,9 @@ def one_way_normalizer(X_train: NDArray[T], X_valid: NDArray[T]) -> tuple[NDArra
     return X_train_norm, X_valid_norm
 
 
-def get_dataset_class(dataset: str) -> type[Dataset]:
-    data_class = None
-    for v in importlib.import_module(f"data.{dataset}").__dict__.values():
+def get_dataset_class(dataset_name: str) -> type[Dataset]:
+    dataset_class = None
+    for v in importlib.import_module(f"datasets.{dataset_name}").__dict__.values():
         if (
             inspect.isclass(v)
             and (not inspect.isabstract(v))
@@ -99,9 +105,9 @@ def get_dataset_class(dataset: str) -> type[Dataset]:
             and (v is not Dataset)
             and issubclass(v, Dataset)
         ):
-            data_class = v
+            dataset_class = v
             break
-    if data_class is None:
-        raise ValueError(f"invalid dataset: {dataset}")
+    if dataset_class is None:
+        raise ValueError(f"invalid dataset: {dataset_name}")
 
-    return data_class
+    return dataset_class

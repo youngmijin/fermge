@@ -16,9 +16,9 @@ __pycache__/
 *.ipynb
 !/example.ipynb
 
-### Data ###
-data/*
-!data/*.py
+### Datasets ###
+datasets/*
+!datasets/*.py
 
 ### Output ###
 output/
