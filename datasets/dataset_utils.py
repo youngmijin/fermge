@@ -84,6 +84,7 @@ def one_way_normalizer(X_train: NDArray[T], X_valid: NDArray[T]) -> tuple[NDArra
     X_valid_float = X_valid.astype(float)
     X_train_mean = np.mean(X_train_float, axis=0).astype(float)
     X_train_std = np.std(X_train_float, axis=0).astype(float)
+    X_train_std = np.where(X_train_std == 0, 1.0, X_train_std)
     X_train_norm = ((X_train_float - X_train_mean) / X_train_std).astype(X_train.dtype)
     X_valid_norm = ((X_valid_float - X_train_mean) / X_train_std).astype(X_valid.dtype)
     return X_train_norm, X_valid_norm

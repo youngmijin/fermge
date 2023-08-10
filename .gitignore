@@ -36,3 +36,5 @@ test_*.ipynb
 *.pkl
 *.yaml
 *.zip
+*.png
+*.svg

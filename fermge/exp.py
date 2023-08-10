@@ -25,6 +25,7 @@ class ExpValidResult:
     err_baseline: float
 
     v: tuple[float, float] | None
+    confmat: tuple[float, float, float, float] | None
     group_size: dict[str, int] | None
     group_confmat: dict[str, tuple[float, float, float, float]] | None
     group_ratio: dict[str, float] | None
@@ -186,6 +187,7 @@ def run_exp(
 
             # collect testing results - 3 (v & rfp & rfn)
             v_v: tuple[float, float] | None = None
+            v_confmat: tuple[float, float, float, float] | None = None
             v_group_confmat: dict[str, tuple[float, float, float, float]] | None = None
             v_group_size: dict[str, int] | None = None
             v_group_ratio: dict[str, float] | None = None
@@ -198,6 +200,7 @@ def run_exp(
                 group_cnt = len(classifier.group_names)
                 group_size = np.zeros((group_cnt,), dtype=np.int_)
                 v_v_by_thr_idx = np.zeros((v_thr_cnt,), dtype=np.float_)
+                v_confmat_by_thr_idx = np.zeros((v_thr_cnt, 4), dtype=np.float_)
                 v_group_confmat_by_thr_idx = np.zeros((v_thr_cnt, 4, group_cnt), dtype=np.float_)
                 v_group_rfp_by_thr_idx = np.zeros((v_thr_cnt, group_cnt), dtype=np.float_)
                 v_group_rfn_by_thr_idx = np.zeros((v_thr_cnt, group_cnt), dtype=np.float_)
@@ -205,6 +208,7 @@ def run_exp(
                 v_total_rfn_by_thr_idx = np.zeros((v_thr_cnt,), dtype=np.float_)
                 for i, thr_idx in enumerate(v_thr_idxs):
                     total_confmat = classifier.predict_valid(thr_candidates[thr_idx])[1].tolist()
+                    v_confmat_by_thr_idx[i, :] = total_confmat
                     group_confmat = np.zeros((4, group_cnt), dtype=np.float_)
                     for group_idx, group_name in enumerate(classifier.group_names):
                         _, confmat = classifier.predict_valid(
@@ -225,6 +229,12 @@ def run_exp(
                     v_total_rfp_by_thr_idx[i] = total_rfp
                     v_total_rfn_by_thr_idx[i] = total_rfn
                 v_v = get_mean_std(v_v_by_thr_idx, v_thr_probs, v_thr_choices)
+                v_confmat = tuple(
+                    [
+                        get_mean_std(v_confmat_by_thr_idx[:, i], v_thr_probs, v_thr_choices)[0]
+                        for i in range(4)
+                    ]
+                )
 
                 v_group_size = {}
                 v_group_confmat = {}
@@ -259,6 +269,7 @@ def run_exp(
                 v_total_rfn = get_mean_std(v_total_rfn_by_thr_idx, v_thr_probs, v_thr_choices)
 
             valid_result = ExpValidResult(
+                confmat=v_confmat,
                 ge=v_ge,
                 ge_baseline=v_ge_baseline,
                 err=v_err,

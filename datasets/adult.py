@@ -53,8 +53,10 @@ class Adult(Dataset):
         adult = adult.drop(columns=["fnlwgt"])
         adult = adult.replace({"?": np.nan})
         adult = adult.dropna()
+        adult = adult[adult["race"].isin(["Black", "White"])]
         adult = adult.replace({"<=50K": 0, ">50K": 1})
         adult = adult.replace({"Female": 0, "Male": 1})
+        adult = adult.replace({"Black": 0, "White": 1})
         adult = adult.reset_index(drop=True)
 
         adult = encode_onehot_columns(
@@ -65,7 +67,6 @@ class Adult(Dataset):
                 "marital-status",
                 "occupation",
                 "relationship",
-                "race",
                 "native-country",
             ],
         )
