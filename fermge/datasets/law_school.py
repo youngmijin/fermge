@@ -5,8 +5,8 @@ import pandas as pd
 from numpy.typing import NDArray
 from sklearn.model_selection import train_test_split
 
-from datasets.dataset import Dataset
-from datasets.dataset_utils import GroupCriteria, make_group_indices, one_way_normalizer
+from fermge.datasets.dataset import Dataset
+from fermge.datasets.dataset_utils import GroupCriteria, make_group_indices, one_way_normalizer
 
 __all__ = ["LawSchool"]
 

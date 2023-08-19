@@ -81,7 +81,7 @@ class Dataset(ABC):
 
 def get_dataset_class(dataset_name: str) -> type[Dataset]:
     dataset_class = None
-    for v in importlib.import_module(f"datasets.{dataset_name}").__dict__.values():
+    for v in importlib.import_module(f"fermge.datasets.{dataset_name}").__dict__.values():
         if (
             inspect.isclass(v)
             and (not inspect.isabstract(v))

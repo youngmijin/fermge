@@ -5,21 +5,23 @@ import pandas as pd
 from numpy.typing import NDArray
 from sklearn.model_selection import train_test_split
 
-from datasets.dataset import Dataset
-from datasets.dataset_utils import (
+from fermge.datasets.dataset import Dataset
+from fermge.datasets.dataset_utils import (
     GroupCriteria,
     encode_onehot_columns,
     make_group_indices,
     one_way_normalizer,
 )
 
-__all__ = ["COMPAS"]
+__all__ = ["Adult"]
 
 
-class COMPAS(Dataset):
+class Adult(Dataset):
     """
-    Angwin, J., Larson, J., Mattu, S., & Kirchner, L. (2016).
-    Machine bias. ProPublica, May, 23.
+    Kohavi, R. (1996).
+    Scaling up the accuracy of Naive-Bayes classifiers: a decision-tree hybrid.
+    In Proceedings of the 2nd International Conference on Knowledge Discovery
+    and Data mining, Portland, 1996 (pp. 202-207).
     """
 
     def __init__(self):
@@ -32,54 +34,45 @@ class COMPAS(Dataset):
 
     @property
     def name(self) -> str:
-        return "compas"
+        return "adult"
 
     @property
     def file_local_path(self) -> str:
-        return os.path.join(os.path.dirname(__file__), "compas_scores_two_years.csv")
+        return os.path.join(os.path.dirname(__file__), "adult.csv")
 
     @property
     def file_remote_url(self) -> str:
-        return "https://drive.google.com/file/d/1xhTY-u0Rg5IKfYKGlMqLaxWY-oB0OByU/view"
+        return "https://drive.google.com/uc?id=1xpNXKrPR-VUQXNV9FrqIK5xe0yLkP46B"
 
     @property
     def file_md5_hash(self) -> str:
-        return "9165d40c400bba93a8cffece2b74622b"
+        return "46a9b0988c83b02d27640bf9ced3ab95"
 
     def load(self, *group_criterias: GroupCriteria):
-        compas = pd.read_csv(self.file_local_path)
-        compas = compas[compas["days_b_screening_arrest"] <= 30]
-        compas = compas[compas["days_b_screening_arrest"] >= -30]
-        compas = compas[compas["is_recid"] != -1]
-        compas = compas[compas["c_charge_degree"] != "O"]
-        compas = compas[compas["score_text"] != "N/A"]
-        compas = compas[compas["race"].isin(["African-American", "Caucasian"])]
-        compas = compas[
-            [
-                "sex",
-                "age",
-                "age_cat",
-                "race",
-                "juv_fel_count",
-                "juv_misd_count",
-                "juv_other_count",
-                "priors_count",
-                "c_charge_degree",
-                "score_text",
-                "v_score_text",
-                "two_year_recid",
-            ]
-        ]
-        compas = compas.dropna()
-        compas["sex"] = compas["sex"].replace({"Female": 1, "Male": 0})
-        compas["race"] = compas["race"].replace({"African-American": 0, "Caucasian": 1})
-        compas["score_text"] = compas["score_text"].replace({"Low": 0, "Medium": 0, "High": 1})
-        compas["v_score_text"] = compas["v_score_text"].replace({"Low": 0, "Medium": 0, "High": 1})
-        compas = encode_onehot_columns(compas, ["age_cat", "c_charge_degree"])
-        compas["two_year_recid"] = (compas["two_year_recid"] - 1) * -1
+        adult = pd.read_csv(self.file_local_path)
+        adult = adult.drop(columns=["fnlwgt"])
+        adult = adult.replace({"?": np.nan})
+        adult = adult.dropna()
+        adult = adult[adult["race"].isin(["Black", "White"])]
+        adult = adult.replace({"<=50K": 0, ">50K": 1})
+        adult = adult.replace({"Female": 0, "Male": 1})
+        adult = adult.replace({"Black": 0, "White": 1})
+        adult = adult.reset_index(drop=True)
 
-        X = compas.drop(columns="two_year_recid")
-        y = compas["two_year_recid"]
+        adult = encode_onehot_columns(
+            adult,
+            [
+                "workclass",
+                "education",
+                "marital-status",
+                "occupation",
+                "relationship",
+                "native-country",
+            ],
+        )
+
+        X = adult.drop(columns=["income"])
+        y = adult["income"]
 
         X_train: pd.DataFrame
         X_valid: pd.DataFrame
@@ -104,7 +97,7 @@ class COMPAS(Dataset):
 
     def get_group_criterias(self, n_groups: int) -> list[GroupCriteria]:
         if n_groups == 2:
-            return [("race", {"African-American": [0], "Caucasian": [1]})]
+            return [("gender", {"female": [0], "male": [1]})]
         else:
             raise NotImplementedError
 

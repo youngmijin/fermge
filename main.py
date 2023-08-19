@@ -12,8 +12,8 @@ import rich.traceback
 import yaml
 from rich import print
 
-from datasets import get_dataset_class
 from fermge import BinaryLogisticClassification, get_param_sets, run_exp
+from fermge.datasets import get_dataset_class
 from plotting import make_plottingdata, parse_metric, plot_results, save_fig
 
 rich.traceback.install(show_locals=True, suppress=[numba])
@@ -339,7 +339,7 @@ if __name__ == "__main__":
         type=str,
         required=True,
         metavar="NAME",
-        help="dataset name; must be same with the python file name in ./datasets",
+        help="dataset name; must be same with the python file name in ./fermge/datasets",
     )
     expopt.add_argument(
         "--dataset_url",
