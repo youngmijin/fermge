@@ -72,8 +72,6 @@ class Adult(Dataset):
         )
 
         X = adult.drop(columns=["income"])
-        if len(drop) > 0:
-            X = X.drop(columns=drop)  # pyright: ignore [reportConstantRedefinition]
         y = adult["income"]
 
         X_train: pd.DataFrame
@@ -88,6 +86,10 @@ class Adult(Dataset):
         y_valid = y_valid.reset_index(drop=True)
 
         self.group_indices = make_group_indices(X_train, X_valid, *group_criterias)
+
+        if len(drop) > 0:
+            X_train = X_train.drop(columns=drop)
+            X_valid = X_valid.drop(columns=drop)
 
         self.X_train, self.X_valid = one_way_normalizer(
             X_train.to_numpy().astype(np.float32),
