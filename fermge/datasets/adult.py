@@ -48,9 +48,11 @@ class Adult(Dataset):
     def file_md5_hash(self) -> str:
         return "46a9b0988c83b02d27640bf9ced3ab95"
 
-    def load(self, *group_criterias: GroupCriteria):
+    def load(self, *group_criterias: GroupCriteria, drop: list[str] = []):
         adult = pd.read_csv(self.file_local_path)
         adult = adult.drop(columns=["fnlwgt"])
+        if len(drop) > 0:
+            adult = adult.drop(columns=drop)
         adult = adult.replace({"?": np.nan})
         adult = adult.dropna()
         adult = adult[adult["race"].isin(["Black", "White"])]
