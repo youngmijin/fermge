@@ -2,6 +2,7 @@ import gc
 import warnings
 from dataclasses import dataclass
 from multiprocessing.pool import ThreadPool
+from typing import Callable
 
 import numpy as np
 import psutil
@@ -34,6 +35,8 @@ class ExpValidResult:
     total_rfp: tuple[float, float] | None
     total_rfn: tuple[float, float] | None
 
+    custom: dict[str, tuple[float, float]]
+
 
 @dataclass
 class ExpTrainResult:
@@ -50,6 +53,7 @@ def run_exp(
     valid_times: int = 0,
     thr_granularity: int = 201,
     no_threading: bool = False,
+    custom_metrics: dict[str, Callable[[np.ndarray, np.ndarray, np.ndarray], float]] = {},
 ) -> dict[ParamSet, tuple[ExpTrainResult, ExpValidResult | None]]:
     if not (include_valid or keep_trace):
         warnings.warn(
@@ -163,8 +167,11 @@ def run_exp(
             v_thr_cnt = len(v_thr_idxs)
             v_thr_choices = get_prob_choices(v_thr_probs, valid_times)
 
+            v_results_by_thr_idx = [
+                classifier.predict_valid(thr_candidates[thr_idx]) for thr_idx in v_thr_idxs
+            ]
             v_confmat_by_thr_idx = [
-                classifier.predict_valid(thr_candidates[thr_idx])[1] for thr_idx in v_thr_idxs
+                v_result_by_thr_idx[1] for v_result_by_thr_idx in v_results_by_thr_idx
             ]
             v_ge_by_thr_idx = np.array(
                 [
@@ -184,6 +191,36 @@ def run_exp(
             v_err_baseline = (v_confmat_baseline[1] + v_confmat_baseline[2]) / sum(
                 v_confmat_baseline
             )
+
+            # collect validation results - 2 (customized metrics)
+            v_y_hats_by_thr_idx = [
+                v_result_by_thr_idx[0] for v_result_by_thr_idx in v_results_by_thr_idx
+            ]
+            v_custom_metrics_by_thr_idx = {}
+            v_sensitive_group = []
+            assert classifier.valid_y is not None and classifier.valid_group_indices is not None
+            for y_idx in range(len(classifier.valid_y)):
+                is_group_found = False
+                for group_name in classifier.group_names:
+                    if classifier.valid_y[y_idx] in classifier.valid_group_indices[group_name]:
+                        v_sensitive_group.append(group_name)
+                        is_group_found = True
+                        break
+                if not is_group_found:
+                    raise ValueError(
+                        f"Cannot find group for y[{y_idx}] = {classifier.valid_y[y_idx]}"
+                    )
+            v_sensitive_group = np.array(v_sensitive_group)
+            for metric_name, metric_func in custom_metrics.items():
+                v_custom_metrics_by_thr_idx[metric_name] = [
+                    metric_func(classifier.valid_y, y_hat, v_sensitive_group)
+                    for y_hat in v_y_hats_by_thr_idx
+                ]
+            v_custom_metrics: dict[str, tuple[float, float]] = {}
+            for metric_name, metric_values_by_thr_idx in v_custom_metrics_by_thr_idx.items():
+                v_custom_metrics[metric_name] = get_mean_std(
+                    np.array(metric_values_by_thr_idx), v_thr_probs, v_thr_choices
+                )
 
             # collect testing results - 3 (v & rfp & rfn)
             v_v: tuple[float, float] | None = None
@@ -282,6 +319,7 @@ def run_exp(
                 group_rfn=v_group_rfn,
                 total_rfp=v_total_rfp,
                 total_rfn=v_total_rfn,
+                custom=v_custom_metrics,
             )
 
         del gefair_result
