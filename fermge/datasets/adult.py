@@ -51,8 +51,6 @@ class Adult(Dataset):
     def load(self, *group_criterias: GroupCriteria, drop: list[str] = []):
         adult = pd.read_csv(self.file_local_path)
         adult = adult.drop(columns=["fnlwgt"])
-        if len(drop) > 0:
-            adult = adult.drop(columns=drop)
         adult = adult.replace({"?": np.nan})
         adult = adult.dropna()
         adult = adult[adult["race"].isin(["Black", "White"])]
@@ -74,6 +72,8 @@ class Adult(Dataset):
         )
 
         X = adult.drop(columns=["income"])
+        if len(drop) > 0:
+            X = X.drop(columns=drop)  # pyright: ignore [reportConstantRedefinition]
         y = adult["income"]
 
         X_train: pd.DataFrame
