@@ -202,7 +202,7 @@ def run_exp(
             for y_idx in range(len(classifier.valid_y)):
                 is_group_found = False
                 for group_name in classifier.group_names:
-                    if classifier.valid_y[y_idx] in classifier.valid_group_indices[group_name]:
+                    if y_idx in classifier.valid_group_indices[group_name]:
                         v_sensitive_group.append(group_name)
                         is_group_found = True
                         break
