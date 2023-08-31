@@ -5,12 +5,12 @@ description = "A Fair Empirical Risk Minimization with Generalized Entropy"
 authors = []
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.11"
-numpy = ">=1.22,<1.24"
+python = ">=3.8"
+numpy = "^1.22"
 scikit-learn = "^1.2.0"
 matplotlib = "^3.6.2"
 pandas = "^1.5.2"
-numba = "^0.56.4"
+numba = "^0.57.1"
 pyyaml = "^6.0"
 psutil = "^5.9.4"
 rich = "^13.0.1"
@@ -32,7 +32,7 @@ line-length = 100
 
 [tool.pyright]
 include = ["fermge"]
-pythonVersion = "3.10"
+pythonVersion = "3.11"
 pythonPlatform = "Linux"
 typeCheckingMode = "basic"
 reportPropertyTypeMismatch = "error"
