@@ -33,3 +33,4 @@ Check [`example.ipynb`](./example.ipynb) for API usage.
 #### **NOTE**
 
 - Running time varies depending on the parameters. Above two CLI examples in _USAGE_ section will take about 30 seconds each on general computing environment.
+
